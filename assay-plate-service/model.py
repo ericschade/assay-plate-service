@@ -16,7 +16,6 @@ class Well(db.Model):
     index = db.Column(db.Integer)
     cell_line = db.Column(db.String)
 
-    # would be cool to handle multiple chemicals in same well
     def __init__(self,
                  plate_id: int,
                  index: int,
@@ -111,6 +110,7 @@ class Well(db.Model):
                 db.session.add(new_chemical_in_well)
                 db.session.commit()
             else:
+                # have to make new chemical entry before creating association table entry
                 new_chemical = Chemical(chemical_str_id)
                 db.session.add(new_chemical)
                 db.session.commit()
@@ -121,20 +121,6 @@ class Well(db.Model):
                 )
                 db.session.add(new_chemical_in_well)
                 db.session.commit()
-
-    @property
-    def chemicals(self) -> List[str]:
-        pass
-
-    @property
-    def row(self) -> int:
-        # get row from index
-        pass
-
-    @property
-    def col(self) -> int:
-        # get row from index
-        pass
 
 
 class Plate(db.Model):
@@ -162,12 +148,8 @@ class Plate(db.Model):
                 f"{size} is not a valid plate size."
             )
 
-    def make_all_wells_empty(self):
-        # create a bunch of empty well objects to be filled in later
-        for i in range(self.size):
-            self.make_empty_well(i)
-
     def make_empty_well(self, index: int, overwrite: bool = True) -> Well:
+        """Used to return a new well with minimal data if one doesnt already exist"""
         self.check_index(index)
         if Well.query.filter_by(plate_id=self.id, index=index).first():
             if overwrite:
@@ -184,6 +166,7 @@ class Plate(db.Model):
         return new_well
 
     def set_well_data(self, index: int, chemicals: Union[List[str], str], concentrations: Union[List[float], float], **kwargs) -> Well:
+        """makes it easy to flexibly modify properties of well objects via their parent plate"""
         self.check_index(index)
         if Well.query.filter_by(plate_id=self.id, index=index).first():
             well_to_update = Well.query.filter_by(plate_id=self.id, index=index).first()
@@ -211,6 +194,7 @@ class Plate(db.Model):
         return int(self._size_shape_map.get(self.size).split('x')[0])
 
     def well(self, index: int) -> Well:
+        """get the well with the specified index if it exists or make + return a new empty well"""
         self.check_index(index)
         if Well.query.filter_by(plate_id=self.id, index=index).first():
             return Well.query.filter_by(plate_id=self.id, index=index).first()
@@ -245,7 +229,7 @@ class Chemical(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     str_id = db.Column(db.String, unique=True)
 
-    # Other known chemical properties here
+    # Room for lots of other known chemical properties here
 
     def __init__(self, str_id: str):
         self.str_id = str_id
@@ -265,12 +249,15 @@ class Chemical(db.Model):
 
 
 class ChemicalInWell(db.Model):
+
     # relational columns
     chemical_str_id = db.Column(db.String, db.ForeignKey('chemical.str_id'), primary_key=True)
     well_id = db.Column(db.Integer, db.ForeignKey('well.id'), primary_key=True)
+
     # Data which only exists when a link exists between well and chemical
     concentration = db.Column(db.Float)
 
+    # support M2M relationship
     chemical = db.relationship("Chemical", backref=db.backref('wells', cascade="all", passive_deletes=True))
     well = db.relationship("Well", backref=db.backref('chemicals', cascade="all", passive_deletes=True))
 
@@ -281,6 +268,7 @@ class ChemicalInWell(db.Model):
 
 
 class DoseResponseCurve(db.Model):
+    """meant to serve as an anchor for post-assay analysis to quickly get assay curves"""
     id = db.Column(db.Integer, primary_key=True)
     plate_id = db.Column(db.Integer, db.ForeignKey('plate.id'))
     starting_well_index = db.Column(db.Integer)
@@ -354,11 +342,12 @@ class DoseResponseCurve(db.Model):
             )
 
     def populate_wells(self):
-        # Do some business logic to get the list of indices/concentrations
+        # Do some business logic to get the list of wells/concentrations
         list_of_concentrations = self.calculate_curve()
         list_of_wells = self.curve_wells
+
         # make/overwrite wells in those locations
-        # setting concentration will happen in bulk outside of the dose response curve.
+        # setting cell_line will happen in bulk outside of the dose response curve.
         # the drc should only know about the chemical information
         for i, well in enumerate(list_of_wells):
             Plate.query.get(self.plate_id).set_well_data(

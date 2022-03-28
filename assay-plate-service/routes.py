@@ -117,7 +117,6 @@ def assign_dose_response_curves(plate_id):
             f"Too many wells are needed to fit onto plate {plate.name} alone. "
             f"Consider reducing the number of chemicals or the number of points in the response curve."
         )
-    # try:
     # Make a bunch of new drcs
     starting_well_index = 0
     for chemical in chemicals:

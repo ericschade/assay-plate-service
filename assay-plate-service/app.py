@@ -2,8 +2,6 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 
-
-
 # Init App
 app = Flask(__name__)
 # Database config
@@ -16,7 +14,6 @@ db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
 from routes import *
-
 
 
 # Run Server
