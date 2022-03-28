@@ -2,7 +2,10 @@
 Create and customize assay plates with experimentally relevant well contents.
 
 ### Running the App:
-`cd assay-plate-service`
+```
+pip install -r requirements-pip3.txt
+cd assay-plate-service
+```
 
 ```
 python
