@@ -16,9 +16,9 @@ db.create_all()
 
  - All POST requests will successfully execute exactly as formatted in the prompt
  - There are are two discrepencies between the way the data is held/serialized when compared to the prompt:
-            1) Additional feature - multiple chemicals can be placed in a single well for combinatorial screening applications by making the "chemical" and "concentration" fields into lists.
+            - 1) Additional feature - multiple chemicals can be placed in a single well for combinatorial screening applications by making the "chemical" and "concentration" fields into lists.
             It is still ok to POST non-list data to thsoe fields without error but well schema returned by 'GET' requests come with a list of serialized chemical/concentration pairs rather than strings
-            2) Change to schema - the plate layout data is held in a field called 'wells' in the plate GET response rather than 'plate',
+            - 2) Change to schema - the plate layout data is held in a field called 'wells' in the plate GET response rather than 'plate',
             which made the most sense to me in lieu of knowing exactly what should be in the 'plate' field.
 
  - 8 Endpoints defined:
